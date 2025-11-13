@@ -8,12 +8,11 @@ from sklearn.compose import ColumnTransformer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, ConfusionMatrixDisplay
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.pipeline import Pipeline as ImbPipeline
 
 from utils.args import existing_file
-from utils.datasets import label_counts_as_percentage, per_class_accuracy
+from utils.datasets import label_counts_as_percentage, evaluate
 
 RANDOM_STATE = 42
 params = {
@@ -21,18 +20,6 @@ params = {
     'clf__min_samples_split': range(2, 20, 2),
     'clf__criterion': ["entropy", "gini"]
 }
-
-def evaluate(model, name, X_tr, y_tr, X_te, y_te):
-    print(f"\n=== {name} ===")
-    yhat_tr = model.predict(X_tr); yhat_te = model.predict(X_te)
-    print(f"Accuracy (train): {accuracy_score(y_tr, yhat_tr):.4f}")
-    print(f"Accuracy (test) : {accuracy_score(y_te, yhat_te):.4f}")
-    print("\nPer-class accuracy (train):"); print(per_class_accuracy(y_tr, yhat_tr))
-    print("\nPer-class accuracy (test):");  print(per_class_accuracy(y_te, yhat_te))
-    ConfusionMatrixDisplay.from_predictions(y_tr, yhat_tr)
-    plt.title(f"{name} — Train CM"); plt.show()
-    ConfusionMatrixDisplay.from_predictions(y_te, yhat_te)
-    plt.title(f"{name} — Test CM");  plt.show()
 
 def save_decision_tree(clf, feature_names, class_names, file_name):
     plt.figure(figsize=(24, 20))

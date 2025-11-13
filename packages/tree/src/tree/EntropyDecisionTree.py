@@ -1,16 +1,13 @@
 from dataclasses import dataclass, InitVar
 from typing import Self, Optional, Dict, Any
-import argparse
 
 import numpy as np
 import pandas as pd
 from graphviz import Digraph
 
-from utils.args import existing_file
 from utils.datasets import (
     get_information_gain_by_n,
     get_class_counts,
-    evaluate
 )
 
 class EntropyDecisionTree:
@@ -108,19 +105,23 @@ class EntropyDecisionTree:
             )
 
     def __init__(self: Self, max_depth: int = 3, min_samples_split: int = 2):
-        self.__max_depth: int = max_depth
-        self.__min_samples_split: int = min_samples_split
+        self._max_depth: int = max_depth
+        self._min_samples_split: int = min_samples_split
 
         self.root : Optional["EntropyDecisionTree.Node"] = None
         self.fit_context : Optional["EntropyDecisionTree.FitContext"] = None
 
     @property
+    def name(self):
+        return "entropy"
+
+    @property
     def max_depth(self: Self) -> int:
-        return self.__max_depth
+        return self._max_depth
 
     @property
     def min_samples_split(self: Self) -> int:
-        return self.__min_samples_split
+        return self._min_samples_split
 
 # public usage
     def fit(self, x_in: pd.DataFrame, y_in: pd.Series):
@@ -132,40 +133,40 @@ class EntropyDecisionTree:
         category_map = dict(enumerate(y_in.cat.categories))
         feature_map = dict(enumerate(x_in.columns))
         self.fit_context = EntropyDecisionTree.FitContext(y=y, category_map=category_map, feature_map=feature_map)
-        self.root = self.__fit_classifier_tree_recursively(x, y, depth=0)
+        self.root = self._fit_classifier_tree_recursively(x, y, depth=0)
 
     def predict(self, x_in: pd.DataFrame):
         if self.root is None:
             raise RuntimeError("fit model first to predict")
         x = np.asarray(x_in, dtype=float)
-        y_pred = np.array([self.__predict_one(_x, self.root) for _x in x])
+        y_pred = np.array([self._predict_one(_x, self.root) for _x in x])
         return self.fit_context.decode(y_pred)
 
 # helpers
-    def __fit_classifier_tree_recursively(self: Self, x, y, depth: int) -> Node:
+    def _fit_classifier_tree_recursively(self: Self, x, y, depth: int) -> Node:
         node = EntropyDecisionTree.Node(depth=depth)
         node.class_counts = get_class_counts(self.fit_context.n_classes, y)
 
         # base condition
-        if depth >= self.__max_depth \
+        if depth >= self._max_depth \
                 or len(np.unique(y)) == 1 \
-                or len(y) < self.__min_samples_split:
+                or len(y) < self._min_samples_split:
             node.prediction = int(np.argmax(node.class_counts))
             node.prediction_category = self.fit_context.category_map[node.prediction]
             return node
 
-        best_split = self.__generate_best_split(x, y)
+        best_split = self._generate_best_split(x, y)
         if best_split is None:
             node.prediction = int(np.argmax(node.class_counts))
             node.prediction_category = self.fit_context.category_map[node.prediction]
             return node
 
         node.best_split = best_split
-        node.left = self.__fit_classifier_tree_recursively(x[best_split.left_split_mask], y[best_split.left_split_mask], depth=depth+1)
-        node.right = self.__fit_classifier_tree_recursively(x[best_split.right_split_mask], y[best_split.right_split_mask], depth=depth+1)
+        node.left = self._fit_classifier_tree_recursively(x[best_split.left_split_mask], y[best_split.left_split_mask], depth=depth+1)
+        node.right = self._fit_classifier_tree_recursively(x[best_split.right_split_mask], y[best_split.right_split_mask], depth=depth+1)
         return node
 
-    def __generate_best_split(self: Self, x, y) -> Optional[BestSplit]:
+    def _generate_best_split(self: Self, x, y) -> Optional[BestSplit]:
         n_samples, n_feature_count = x.shape
         if n_samples < self.min_samples_split:
             return None
@@ -214,35 +215,15 @@ class EntropyDecisionTree:
             right_split_mask=best_right_split
         )
 
-    def __predict_one(self, x, node: Node) -> Any:
+    def _predict_one(self, x, node: Node) -> Any:
         best_split = node.best_split
         # If leaf or no split information
         if node.best_split is None:
             return node.prediction
 
         if x[best_split.feature_index] <= best_split.threshold:
-            return self.__predict_one(x, node.left)
+            return self._predict_one(x, node.left)
         else:
-            return self.__predict_one(x, node.right)
+            return self._predict_one(x, node.right)
 
 
-
-def main(args):
-    train_df = pd.read_csv(args.train)
-    x_train = train_df.drop(columns=["Performance_Label"])
-    y_train = train_df["Performance_Label"].astype("category")
-
-    test_df = pd.read_csv(args.test)
-    x_test = test_df.drop(columns=["Performance_Label"])
-    y_test = test_df["Performance_Label"].astype("category")
-
-    model = EntropyDecisionTree()
-    model.fit(x_train, y_train)
-    evaluate(model, "Custom Decision Tree", x_train, y_train, x_test, y_test)
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-test", required=True, type=existing_file)
-    parser.add_argument("-train", required=True, type=existing_file)
-    args = parser.parse_args()
-    main(args)

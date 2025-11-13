@@ -5,6 +5,7 @@ requires-python = ">=3.12"
 [manifest]
 members = [
     "decision-trees",
+    "tree",
     "utils",
 ]
 
@@ -93,6 +94,7 @@ dependencies = [
     { name = "matplotlib" },
     { name = "pandas" },
     { name = "scikit-learn" },
+    { name = "tree" },
     { name = "utils" },
 ]
 
@@ -103,6 +105,7 @@ requires-dist = [
     { name = "matplotlib", specifier = ">=3.10.7" },
     { name = "pandas", specifier = ">=2.3.3" },
     { name = "scikit-learn", specifier = ">=1.7.2" },
+    { name = "tree", editable = "packages/tree" },
     { name = "utils", editable = "packages/utils" },
 ]
 
@@ -637,6 +640,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/b7/4d/08c89e34946fce2ae
 wheels = [
     { url = "https://files.pythonhosted.org/packages/32/d5/f9a850d79b0851d1d4ef6456097579a9005b31fea68726a4ae5f2d82ddd9/threadpoolctl-3.6.0-py3-none-any.whl", hash = "sha256:43a0b8fd5a2928500110039e43a5eed8480b918967083ea48dc3ab9f13c4a7fb", size = 18638, upload-time = "2025-03-13T13:49:21.846Z" },
 ]
+
+[[package]]
+name = "tree"
+version = "0.1.0"
+source = { editable = "packages/tree" }
 
 [[package]]
 name = "tzdata"
