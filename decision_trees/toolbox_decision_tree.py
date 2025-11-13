@@ -29,8 +29,10 @@ def evaluate(model, name, X_tr, y_tr, X_te, y_te):
     print(f"Accuracy (test) : {accuracy_score(y_te, yhat_te):.4f}")
     print("\nPer-class accuracy (train):"); print(per_class_accuracy(y_tr, yhat_tr))
     print("\nPer-class accuracy (test):");  print(per_class_accuracy(y_te, yhat_te))
-    ConfusionMatrixDisplay.from_predictions(y_tr, yhat_tr); plt.title(f"{name} — Train CM"); plt.show()
-    ConfusionMatrixDisplay.from_predictions(y_te, yhat_te); plt.title(f"{name} — Test CM");  plt.show()
+    ConfusionMatrixDisplay.from_predictions(y_tr, yhat_tr)
+    plt.title(f"{name} — Train CM"); plt.show()
+    ConfusionMatrixDisplay.from_predictions(y_te, yhat_te)
+    plt.title(f"{name} — Test CM");  plt.show()
 
 def save_decision_tree(clf, feature_names, class_names, file_name):
     plt.figure(figsize=(24, 20))
@@ -42,7 +44,7 @@ def save_decision_tree(clf, feature_names, class_names, file_name):
     plt.close()
 
 def run_fine_tuned_pipeline(X_train, y_train, X_test, y_test):
-    global params
+    global params, RANDOM_STATE
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
     pipeline = Pipeline([
         ("clf", DecisionTreeClassifier(random_state=RANDOM_STATE)),
@@ -56,6 +58,7 @@ def run_fine_tuned_pipeline(X_train, y_train, X_test, y_test):
     return best_estimator
 
 def run_no_pruned_pipeline(X_train, y_train, X_test, y_test):
+    global RANDOM_STATE
     no_prune_pipeline = Pipeline([
         ("clf", DecisionTreeClassifier(random_state=RANDOM_STATE,
                                        criterion="entropy", max_depth=None, min_samples_split=2)),
@@ -65,7 +68,7 @@ def run_no_pruned_pipeline(X_train, y_train, X_test, y_test):
     return no_prune_pipeline
 
 def run_normalized_pipeline(X_train, y_train, X_test, y_test):
-    global params
+    global params, RANDOM_STATE
     binary_cols = ['LeadershipRole']
     continuous_cols = [c for c in X_train.columns if c not in binary_cols]
     preprocess = ColumnTransformer(
@@ -82,14 +85,13 @@ def run_normalized_pipeline(X_train, y_train, X_test, y_test):
     gs = GridSearchCV(pipeline, params, cv=cv, n_jobs=-1)
     gs.fit(X_train, y_train)
     best_estimator = gs.best_estimator_
+    best_params = gs.best_params_
+    print(f"Best params: {best_params}")
     evaluate(best_estimator, "Fine tuned with normalization", X_train, y_train, X_test, y_test)
     return best_estimator
 
 def run_undersampled_pipeline(X_train, y_train, X_test, y_test):
-    global params
-    print("Original training distribution (y_train):")
-    print(label_counts_as_percentage(y_train))
-
+    global params, RANDOM_STATE
     rus = RandomUnderSampler(random_state=RANDOM_STATE)  # sampling_strategy='auto' (default) == match minority count
     _, y_under_all = rus.fit_resample(X_train, y_train)
 
@@ -108,10 +110,12 @@ def run_undersampled_pipeline(X_train, y_train, X_test, y_test):
     return best_under
 
 def main(args):
-    global RANDOM_STATE
     train_df = pd.read_csv(args.train)
     X_train = train_df.drop(columns=["Performance_Label"])
     y_train = train_df["Performance_Label"].astype("category")
+
+    print("Original training distribution (y_train):")
+    print(label_counts_as_percentage(y_train))
 
     test_df = pd.read_csv(args.test)
     X_test = test_df.drop(columns=["Performance_Label"])
