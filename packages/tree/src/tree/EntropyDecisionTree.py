@@ -10,7 +10,9 @@ from utils.datasets import (
     get_class_counts,
 )
 
-class EntropyDecisionTree:
+from .DecisionTreeProtocol import DecisionTreeProtocol
+
+class EntropyDecisionTree(DecisionTreeProtocol):
 
     @dataclass(frozen=True)
     class BestSplit:
@@ -225,5 +227,6 @@ class EntropyDecisionTree:
             return self._predict_one(x, node.left)
         else:
             return self._predict_one(x, node.right)
+
 
 

@@ -17,6 +17,9 @@ def main(args):
     y_test = test_df["Performance_Label"].astype("category")
 
     model : Optional[EntropyDecisionTree] = None
+    if args.forest:
+        # will work with random forest here
+        pass
     if args.cost is not None:
         print("model Tan93+Entropy DecisionTree")
         feature_costs = pd.read_csv(args.cost)
@@ -36,7 +39,7 @@ def main(args):
         digraph = model.root.visualize()
         digraph.render(f"{model.name}_dt", format="png", cleanup=True)
 
-    evaluate(model, "Custom Decision Tree", x_train, y_train, x_test, y_test)
+    evaluate(model, "Custom Decision Tree With Cost", x_train, y_train, x_test, y_test)
     if isinstance(model, Tan93EntropyDecisionTree):
         classification_costs = model.classification_cost(x_train, y_train)
         print("classification costs on training data:", classification_costs)

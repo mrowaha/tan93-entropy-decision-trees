@@ -2,8 +2,7 @@ from typing import Callable
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix, accuracy_score, ConfusionMatrixDisplay
+from sklearn.metrics import confusion_matrix, accuracy_score
 
 def label_counts_as_percentage(y) -> pd.DataFrame:
     classes = list(y.cat.categories)
@@ -47,6 +46,13 @@ def get_class_counts(n_classes: int, y: np.ndarray):
     class_counts[values] = counts
     return class_counts
 
+def get_confusion_matrix(y_true, y_pred):
+    labels = list(y_true.cat.categories)
+    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    df = pd.DataFrame(cm, index=[f"true_{l}" for l in labels],
+                         columns=[f"pred_{l}" for l in labels])
+    return df
+
 def evaluate(model, name, X_tr, y_tr, X_te, y_te):
     print(f"\n=== {name} ===")
     yhat_tr = model.predict(X_tr); yhat_te = model.predict(X_te)
@@ -54,7 +60,5 @@ def evaluate(model, name, X_tr, y_tr, X_te, y_te):
     print(f"Accuracy (test) : {accuracy_score(y_te, yhat_te):.4f}")
     print("\nPer-class accuracy (train):"); print(per_class_accuracy(y_tr, yhat_tr))
     print("\nPer-class accuracy (test):");  print(per_class_accuracy(y_te, yhat_te))
-    ConfusionMatrixDisplay.from_predictions(y_tr, yhat_tr)
-    plt.title(f"{name} — Train CM"); plt.show()
-    ConfusionMatrixDisplay.from_predictions(y_te, yhat_te)
-    plt.title(f"{name} — Test CM");  plt.show()
+    print("\nConfusion matrix (train):"); print(get_confusion_matrix(y_tr, yhat_tr))
+    print("\nConfusion matrix (test):"); print(get_confusion_matrix(y_te, yhat_te))
